@@ -1,2 +1,2 @@
 # ConversationalAutoML
-A Framework Towards Democratizing Artificial Intelligence with Natural Language
+A Framework for Generating an Efficient Machine Learning Model with a Few Sentences
