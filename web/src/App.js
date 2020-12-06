@@ -4,7 +4,7 @@ import './App.css';
 
 class App extends React.Component {
   state = {
-    status: 'Active',
+    status: 'standby',
     currentUserMessage: '',
     botState: 0,
     botResponse: null,
@@ -16,38 +16,53 @@ class App extends React.Component {
     this.getBotMessage()
   }
 
-  onReset = () => {
-    // call axios for server-side reset
+  onReset = async () => {
+    let { data } = await axios.get('http://localhost:5000/reset')
     this.setState({
-      status: 'Active',
+      status: 'standby',
       currentUserMessage: '',
       botState: 0,
       botResponse: null,
       requiredInfo: { task: null, dataSource: null, dataset: null, targetVariable: null, delivery: null },
-      messages: []
+      messages: [],
+      showFirstExample: false
     })
-    this.getBotMessage()
+    this.setState({ messages: [data] })
   }
 
-  getBotMessage = () => {
-    // call API by axios
-    let botMessage = "Hi! I'm your Conversational AutoML Bot~"
-    this.setState({ messages: [{ sender: 'Bot', text: botMessage }] })
+  getBotMessage = async () => {
+    let { data } = await axios.get('http://localhost:5000/greet')
+    this.setState({ messages: [data] })
+  }
+
+  getSlotRequestMessage = () => {
+
   }
 
   sendUserMessage = async () => {
     let messages = this.state.messages
-    messages.push({ sender: 'User', text: this.state.currentUserMessage })
-    this.setState({ messages, currentUserMessage: '' })
+    if (this.state.currentUserMessage !== '') {
+      messages.push({ sender: 'User', text: this.state.currentUserMessage })
+      this.setState({ messages, currentUserMessage: '' })
 
-    let { data } = await axios.post('http://localhost:5000/bot', { message: this.state.currentUserMessage })
-    console.log(data)
-    messages.push(data)
-    this.setState({ messages })
+      let { data } = await axios.post('http://localhost:5000/bot', { currentState: this.state.status, message: this.state.currentUserMessage })
+
+      messages.push(data)
+
+      let slots = data.user_slot
+      let { requiredInfo } = this.state
+      for (const key of Object.keys(slots)) {
+        if (key === 'task') {
+          requiredInfo.task = slots[key]
+        }
+      }
+
+      this.setState({ messages, status: data.current_state })
+    }
   }
 
   render() {
-    let { status, requiredInfo, botResponse, currentUserMessage, messages } = this.state
+    let { status, requiredInfo, currentUserMessage, messages } = this.state
     let { task, dataSource, dataset, targetVariable, delivery } = requiredInfo
     return (
       <div className="App">

@@ -1,4 +1,4 @@
-﻿query,intent,imformativeness
+﻿query,intent,slot
 I want a classification model.,new,
 I would like to have a classifier.,new,
 Please build a regression model.,new,
