@@ -1,0 +1,67 @@
+.App {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.Container {
+  padding: 4px;
+  width: 680px;
+  height: 700px;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid white;
+}
+
+.EntryBox {
+  display: flex;
+}
+
+.TextEntryBox {
+  width: 100%;
+  height: 32px;
+  /* border-radius: 0; */
+  /* border: 1px solid black; */
+}
+
+.MessageItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.MessageItem>.SenderAvatar {
+  margin-right: 8px;
+}
+
+.MessageItem>.MessageContentBox {
+  background-color: rgb(236, 236, 236);
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.MessageItem.User {
+  justify-content: flex-end;
+}
+
+.MessageList {
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+  overflow: scroll;
+}
+
+button:focus {
+  outline: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+input:focus {
+  outline: none;
+}
