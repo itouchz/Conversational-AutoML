@@ -16,19 +16,34 @@ class App extends React.Component {
     this.getBotMessage()
   }
 
+  onReset = () => {
+    // call axios for server-side reset
+    this.setState({
+      status: 'Active',
+      currentUserMessage: '',
+      botState: 0,
+      botResponse: null,
+      requiredInfo: { task: null, dataSource: null, dataset: null, targetVariable: null, delivery: null },
+      messages: []
+    })
+    this.getBotMessage()
+  }
+
   getBotMessage = () => {
     // call API by axios
     let botMessage = "Hi! I'm your Conversational AutoML Bot~"
-    let messages = this.state.messages
-    messages.push({ sender: 'Bot', text: botMessage })
-    this.setState({ messages })
+    this.setState({ messages: [{ sender: 'Bot', text: botMessage }] })
   }
 
-  sendUserMessage = () => {
+  sendUserMessage = async () => {
     let messages = this.state.messages
     messages.push({ sender: 'User', text: this.state.currentUserMessage })
-    // call API for getting a response for the given user message
     this.setState({ messages, currentUserMessage: '' })
+
+    let { data } = await axios.post('http://localhost:5000/bot', { message: this.state.currentUserMessage })
+    console.log(data)
+    messages.push(data)
+    this.setState({ messages })
   }
 
   render() {
@@ -39,7 +54,7 @@ class App extends React.Component {
         <h1 style={{ color: 'white', marginTop: 0 }}>Conversational AutoML</h1>
         <div style={{ display: 'flex', justifyContent: 'space-between', width: 680 }}>
           <div><span style={{ color: 'white', fontWeight: 'bold' }}>Status: </span><span style={{ color: status === 'Active' ? 'lightgreen' : 'black' }}>{status}</span></div>
-          <button>Reset</button>
+          <button onClick={this.onReset}>Reset</button>
         </div>
         <div className="Container">
           <div>
