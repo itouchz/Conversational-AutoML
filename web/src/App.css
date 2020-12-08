@@ -10,7 +10,7 @@
 .Container {
   padding: 4px;
   width: 680px;
-  height: 700px;
+  min-height: 640px;
   background: white;
   border-radius: 4px;
   border: 1px solid white;
@@ -31,7 +31,7 @@
 .MessageItem {
   display: flex;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .MessageItem>.SenderAvatar {
@@ -52,7 +52,7 @@
 .MessageList {
   display: flex;
   flex-direction: column;
-  height: 600px;
+  height: 540px;
   overflow: scroll;
 }
 
@@ -66,4 +66,12 @@ button {
 
 input:focus {
   outline: none;
+}
+
+.upload-btn {
+  width: 100%;
+  margin-top: 8px;
+  background: lightblue;
+  border: 1px solid deepskyblue;
+  border-radius: 4px;
 }

@@ -20,13 +20,16 @@ DENY_WORDS = ["no", "nope", "na", "not yet", "not sure",
               "more", "not", "don't", "do not", "again"]
 END_WORDS = ["goodbye", "bye", "see you later",
              "end", "finish", "stop", "not anymore"]
+RESET_WORDS = ['reset', 'start over', 'start again',
+               'begin again', 'back from start', 'from beginning']
+
 ML_METHODS = ['machine learning', 'ml', 'machine']
 DL_METHODS = ['deep learning', 'dl',
               'neural network', 'nn', 'neural', 'network']
 CLASSIFICATIONS = ['class', 'classify',
                    'classification', 'classifier', 'discrete output']
 REGRESSIONS = ['regress', 'regression', 'regressor', 'continuous output']
-DATA_SOURCES = ['upload', '<url>', 'this data',
+DATA_SOURCES = ['upload', 'this data', 'my file', 'file',
                 'this dataset', 'my data', 'my dataset']
 IMAGE_TYPES = ['image', 'picture', 'figure', 'art', 'draw', 'photo', 'photograph', 'portrait',
                'painting', 'visual', 'illustration', 'symbol', 'view', 'vision', 'sketch', 'icon']
@@ -88,10 +91,6 @@ def is_slot_complete():
     return user_slot['method'] != None and user_slot['task'] != None and user_slot['data_source'] != None and user_slot['data_type'] != None and user_slot['dataset'] != None and user_slot['target'] != None and user_slot['delivery'] != None
 
 
-def response_for_incomplete_slot(slot):
-    return ''
-
-
 def update_slot(msg):
     global user_slot
 
@@ -134,7 +133,8 @@ def update_slot(msg):
         if ds in msg:
             user_slot['dataset'] = ds
             user_slot['data_source'] = 'built_in'
-            user_slot['target'] = 'label'
+            _, ds_info = tfds.load(user_slot['dataset'], with_info=True)
+            user_slot['target'] = ds_info.features['label'].names
 
     for ds in DATA_SOURCES:
         if ds in msg:
@@ -147,7 +147,7 @@ def update_slot(msg):
 
     for tv in TARGET_VAR:
         if tv in msg:
-            if tv in ['value', 'feature', 'variable', 'be target variable', 'be target feature']:
+            if tv in ['be target variable', 'be target feature', 'value', 'feature', 'variable']:
                 user_slot['target'] = msg.split(tv)[0].split()[-1]
             else:
                 user_slot['target'] = msg.split(tv)[-1].split()[0]
@@ -161,7 +161,7 @@ def standby_state(user_message):
 
     for greet in GREETING_INPUTS:
         if greet in msg:
-            text += random.choice(GREETING_RESPONSES) + '\n'
+            text += random.choice(GREETING_RESPONSES) + '<br/>'
             break
 
     for end_word in END_WORDS:
@@ -173,16 +173,11 @@ def standby_state(user_message):
     if current_state != 'end':
         update_slot(msg)
         if is_slot_complete():
-            text += f"All you requested are well received! \n These are your requirements: {user_slot['method']}, {user_slot['task']}, {user_slot['dataset']}, {user_slot['target']}, and {user_slot['delivery']} \n Do you want to proceed?"
+            text += f"All you requested are well received! <br/> Please review the following list, do you want to proceed? <br/>"
             current_state = 'await'
         else:
             if user_slot['data_source'] == 'user_define' and user_slot['data_source'] == None:
                 text += 'Please upload your data file (.csv, .txt, .zip) below.'
-            # else:
-            #     text += 'Please answer a few more questions to proceed!~\n'
-            #     for key, value in user_slot.items():
-            #         if value == None:
-            #             text += '- ' + re.sub('_', ' ', key) + '\n'
 
             current_state = 'active'
     else:
@@ -197,9 +192,15 @@ def active_state(user_message, await_feature=None):
     current_state = 'active'
     global user_slot
 
+    for reset in RESET_WORDS:
+        if reset in msg:
+            current_state = 'standby'
+            reset_slot()
+            break
+
     for greet in GREETING_INPUTS:
         if greet in msg:
-            text += random.choice(GREETING_RESPONSES) + '\n'
+            text += random.choice(GREETING_RESPONSES) + ' (again) <br/>'
             break
 
     for end_word in END_WORDS:
@@ -215,18 +216,17 @@ def active_state(user_message, await_feature=None):
             update_slot(msg)
 
         if is_slot_complete():
-            text += f"All you requested are well received! \n These are your requirements: {user_slot['method']}, {user_slot['task']}, {user_slot['dataset']}, {user_slot['target']}, and {user_slot['delivery']} \n Do you want to proceed?"
+            text += f"All you requested are well received! <br/> Please reiview the model's specs, do you would like to proceed? <br/>"
             current_state = 'await'
         else:
             if user_slot['data_source'] == 'user_define' and user_slot['data_source'] == None:
                 text += 'Please upload your data file (.csv, .txt, .zip) below.'
-            # else:
-            #     text += 'Thank you for your information, but please answer a few more questions.\n'
-            #     for key, value in user_slot.items():
-            #         if value == None:
-            #             text += '- ' + re.sub('_', ' ', key) + '\n'
 
             current_state = 'active'
+
+        # if user_slot['target'] != None and user_slot['target'] != 'label' and user_slot['data_source'] != 'user_define':
+        #     _, ds_info = tfds.load(user_slot['dataset'], with_info=True)
+        #     print(ds_info.features['label'].names)
 
     return text, current_state, user_slot
 
@@ -237,9 +237,15 @@ def await_state(user_message):
     current_state = 'await'
     global user_slot
 
+    for reset in RESET_WORDS:
+        if reset in msg:
+            current_state = 'standby'
+            reset_slot()
+            break
+
     for greet in GREETING_INPUTS:
         if greet in msg:
-            text += random.choice(GREETING_RESPONSES) + '\n'
+            text += 'Still wanna greet now?, 😂 <br/>'
             break
 
     for end_word in END_WORDS:
@@ -256,12 +262,12 @@ def await_state(user_message):
     for den in DENY_WORDS:
         if den in msg:
             current_state = 'await'
-            text += 'Umm... Please check your requirement~ \n'
+            text += '🤔 Umm... Please check your requirement~ <br/>'
             break
 
     if current_state != 'building' and current_state != 'standby':
         if is_slot_complete():
-            text += f"These are your requirements: {user_slot['method']}, {user_slot['task']}, {user_slot['dataset']}, {user_slot['target']}, and {user_slot['delivery']} \n Do you want to proceed?"
+            text += f"I've got all needed information as follows. <br/> Do you want to proceed? </br>"
             current_state = 'await'
 
     return text, current_state, user_slot
@@ -275,15 +281,31 @@ def building_state(user_message):
     return text, current_state, user_slot
 
 
+def delivered_state(user_message):
+    text = ''
+    current_state = 'delivered'
+    global user_slot
+
+    return text, current_state, user_slot
+
+
+def upload_success(current_state, filename):
+    global user_slot
+    user_slot['dataset'] = filename
+    return get_response(current_state, 'uploaded!', None)
+
+
 def get_response(current_state, user_message, await_feature):
     filtered_text = text_normalization(user_message)
     await_feature = await_feature
+    print(filtered_text)
 
     response = {
         'standby': standby_state(filtered_text),
         'active': active_state(filtered_text, await_feature),
         'await': await_state(filtered_text),
         'building': building_state(filtered_text),
+        'delivered': delivered_state(filtered_text)
     }
 
     return response[current_state]
